@@ -1,12 +1,13 @@
-# Deploy application to Rafay
+# Deploy Application to Rafay
 - Modify `values.yaml` change `image.repository` to your docker image
+- Modify `templates/deployment.yml` change the ` volumes.ebs-claim` to your EBS volume containing the databases
 - Zip helm chart 
 ```
 cd ~/git
 zip -r pf.zip ./pfhelm/*
 ```
 - Upload the `pf.zip` file to Rafay to deploy the cluster
-
+- Once deployment is complete, you should be able ssh into the running pod
 
 
 # Infrastructure Provisioning Guide.
@@ -94,9 +95,13 @@ git clone https://github.com/kubernetes-sigs/aws-ebs-csi-driver.git
 ```
 
 Travel to the directory with an example storage class:
+```
 cd aws-ebs-csi-driver/examples/kubernetes/dynamic-provisioning/
-So now we need to use a new claim.yaml.
+```
+
+So now we need to use a new `claim.yaml`.
 At the end, make sure that your claim.yaml is:
+```
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -108,9 +113,10 @@ spec:
   resources:
     requests:
       storage: 5000Gi
+```
 
 And your storageclass.yaml is:
-
+```
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
@@ -118,24 +124,35 @@ metadata:
 provisioner: ebs.csi.aws.com
 volumeBindingMode: WaitForFirstConsumer
 allowVolumeExpansion: true
+```
 
 Apply the edits and launch the test app:
+```
 kubectl apply -f specs/
+```
 
 IF you make changes to storage or claim to change the sizes, run:
-
+```
 kubectl apply -f storageclass.yaml
 kubectl apply -f claim.yaml
-This will apply them. The PVC will need to be deleted (kubectl delete pvc ebs-claim) and reloaded though.
+```
+
+This will apply them. The PVC will need to be deleted (`kubectl delete pvc ebs-claim`) and reloaded though.
 
 Verify the capacity of the PVC
+```
 kubectl describe pv pvc-37717cd6-d0dc-11e9-b17f-06fad4858a5a
+```
 
 You can also check the output of the EBS volume as well.
+```
 kubectl exec -it app -- cat /data/out.txt
+```
 
-However, once you’re done with the test app, delete it with:
+Once you’re done with the test app, delete it with:
+```
 Kubectl delete pod app
+```
 
 
 
